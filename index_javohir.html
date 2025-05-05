@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coffee Sales Management</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="http://javohir-nurmatjonov-2t.s3-website.eu-west-3.amazonaws.com/style.css">
+    <style>
+        /* Toast Notification Styles */
+#toastContainer {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 350px;
+}
+
+.toast {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s ease;
+    opacity: 0;
+    transform: translateX(30px);
+    min-width: 280px;
+    border-left: 4px solid;
+}
+
+.toast.show {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.toast.fade-out {
+    opacity: 0;
+    transform: translateX(30px);
+}
+
+.toast-icon {
+    margin-right: 12px;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.toast-message {
+    flex: 1;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.toast-close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    margin-left: 8px;
+    color: inherit;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+.toast-close:hover {
+    opacity: 1;
+}
+
+/* Toast Types */
+.toast-success {
+    background-color: #edf7ed;
+    color: #1e6e1e;
+    border-left-color: #4caf50;
+}
+
+.toast-error {
+    background-color: #fdedeb;
+    color: #c62828;
+    border-left-color: #f44336;
+}
+
+.toast-warning {
+    background-color: #fff8e1;
+    color: #f57c00;
+    border-left-color: #ff9800;
+}
+
+.toast-info {
+    background-color: #e3f2fd;
+    color: #0277bd;
+    border-left-color: #2196f3;
+}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-coffee"></i> Coffee Sales Management</h1>
+            <div class="actions">
+                <button id="addSaleBtn" class="btn-primary"><i class="fas fa-plus"></i> Add New Sale</button>
+                <button id="refreshBtn"><i class="fas fa-sync-alt"></i> Refresh</button>
+            </div>
+        </header>
+
+        <div class="dashboard">
+            <div class="card sales-summary">
+                <h3>Sales Summary</h3>
+                <div class="summary-content">
+                    <div class="summary-item">
+                        <span class="label">Total Sales</span>
+                        <span id="totalSales" class="value">0</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="label">Today's Sales</span>
+                        <span id="todaySales" class="value">0</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="label">Average Sale</span>
+                        <span id="avgSale" class="value">$0.00</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card coffee-stats">
+                <h3>Coffee Types</h3>
+                <div id="coffeeStats" class="stats-list">
+                    <!-- Coffee stats will be loaded here -->
+                    <div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> Loading...</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="filters">
+            <div class="filter-group">
+                <label for="dateFilter">Date Filter:</label>
+                <input type="date" id="dateFilter">
+            </div>
+            <div class="filter-group">
+                <label for="coffeeFilter">Coffee Type:</label>
+                <select id="coffeeFilter">
+                    <option value="">All Types</option>
+                    <!-- Coffee types will be loaded here -->
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="cardFilter">Card Number:</label>
+                <input type="text" id="cardFilter" placeholder="Card number...">
+            </div>
+            <button id="applyFilters" class="btn-primary">Apply Filters</button>
+            <button id="clearFilters">Clear Filters</button>
+        </div>
+
+        <div class="table-container">
+            <table id="salesTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Date & Time</th>
+                        <th>Payment Type</th>
+                        <th>Card Number</th>
+                        <th>Amount</th>
+                        <th>Coffee</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Sales data will be loaded here -->
+                    <tr class="loading-row">
+                        <td colspan="7"><i class="fas fa-spinner fa-spin"></i> Loading sales data...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal for adding/editing sales -->
+    <div id="saleModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 id="modalTitle">Add New Sale</h2>
+            <form id="saleForm">
+                <input type="hidden" id="saleId">
+
+                <div class="form-group">
+                    <label for="coffeeNameInput">Coffee:</label>
+                    <select id="coffeeNameInput" required>
+                        <option value="">Select Coffee</option>
+                        <option value="Latte">Latte</option>
+                        <option value="Hot Chocolate">Hot Chocolate</option>
+                        <option value="Americano">Americano</option>
+                        <option value="Americano with Milk">Americano with Milk</option>
+                        <option value="Cocoa">Cocoa</option>
+                        <option value="Cappuccino">Cappuccino</option>
+                        <option value="Espresso">Espresso</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="moneyInput">Price ($):</label>
+                    <input type="number" id="moneyInput" step="0.1" min="0" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="cashTypeInput">Payment Method:</label>
+                    <select id="cashTypeInput" required>
+                        <option value="card">Card</option>
+                        <option value="cash">Cash</option>
+                    </select>
+                </div>
+
+                <div class="form-group card-field">
+                    <label for="cardInput">Card Number:</label>
+                    <input type="text" id="cardInput" placeholder="ANON-0000-0000-0000" pattern="ANON-[0-9]{4}-[0-9]{4}-[0-9]{4}" required>
+                    <small>Format: ANON-0000-0000-0000</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="datetimeInput">Date & Time:</label>
+                    <input type="datetime-local" id="datetimeInput">
+                    <small>Leave blank for current time</small>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">Save Sale</button>
+                    <button type="button" id="cancelBtn">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Confirmation modal -->
+    <div id="confirmModal" class="modal">
+        <div class="modal-content confirm-modal">
+            <h2>Confirm Delete</h2>
+            <p>Are you sure you want to delete this sale? This action cannot be undone.</p>
+            <div class="form-actions">
+                <button id="deleteConfirmBtn" class="btn-danger">Delete</button>
+                <button id="deleteCancelBtn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast notifications -->
+    <div id="toastContainer"></div>
+
+    <script src="http://javohir-nurmatjonov-2t.s3-website.eu-west-3.amazonaws.com/script.js"></script>
+</body>
+</html>
